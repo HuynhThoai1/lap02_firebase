@@ -1,0 +1,16 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Firebase credentials
+firebase-key.json
+backend/firebase-key.json
+*firebase-key*.json
