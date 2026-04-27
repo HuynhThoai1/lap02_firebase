@@ -6,10 +6,14 @@ from .routers import tasks
 
 app = FastAPI(title="To-Do App API")
 
-# Allow CORS for local development
+# Allow CORS for local development and production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust this in production
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "https://lap02-firebase.web.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
