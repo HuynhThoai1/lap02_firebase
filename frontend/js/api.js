@@ -1,5 +1,5 @@
 // Change this to your Render.com URL when deploying (e.g. "https://my-backend.onrender.com")
-const API_BASE_URL = "https://stellar-tasks-api.onrender.com";
+const API_BASE_URL = "https://taskers-y2ae.onrender.com";
 
 async function get_headers() {
     const auth = window.firebaseAuth;
