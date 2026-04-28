@@ -8,6 +8,7 @@ class TaskBase(BaseModel):
     status: str = "pending"
     label: Optional[str] = "default"
     due_date: Optional[datetime] = None
+    end_time: Optional[datetime] = None
 
 class TaskCreate(TaskBase):
     pass
@@ -18,6 +19,7 @@ class TaskUpdate(BaseModel):
     status: Optional[str] = None
     label: Optional[str] = None
     due_date: Optional[datetime] = None
+    end_time: Optional[datetime] = None
 
 class TaskResponse(TaskBase):
     id: str

@@ -4,7 +4,7 @@ from .dependencies.auth import get_current_user
 
 from .routers import tasks
 
-app = FastAPI(title="To-Do App API")
+app = FastAPI(title="Taskers API")
 
 # Allow CORS for local development and production
 app.add_middleware(

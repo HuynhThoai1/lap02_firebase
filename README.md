@@ -1,51 +1,65 @@
-# Stellar Tasks 🌟
+# Tasker 🌟
 
-Stellar Tasks is a premium To-Do web app with a Glassmorphism UI, powered by FastAPI and Firebase.
+**Môn học:** Tư duy tính toán  
+**Giảng viên hướng dẫn:** Lê Đức Khoan
 
-## 🚀 Quick Start
+## I. Thông tin thực hiện
+* **Họ và tên:** Huỳnh Chí Thoại
+* **MSSV:** 24120457
 
-Follow these steps to set up and run the project locally from the root directory.
+## II. Truy cập trực tuyến 🌐
+Ứng dụng đã được triển khai tại:
+[**https://lap02-firebase.web.app**](https://lap02-firebase.web.app)
 
-### 1. Setup Environment
+## III. Hướng dẫn chạy nhanh (Quick Start)
+Thực hiện các bước sau để thiết lập và chạy dự án cục bộ từ thư mục gốc.
+
+### 1. Thiết lập môi trường (Environment)
 ```bash
-# Create virtual environment
+# Tạo môi trường ảo
 python -m venv .venv
 
-# Activate virtual environment (Git Bash)
+# Kích hoạt môi trường ảo (Git Bash)
 source .venv/Scripts/activate
 
-# Install dependencies
+# Cài đặt các thư viện cần thiết
 pip install -r requirements.txt
 ```
 
-### 2. Configure Firebase
-- **Backend:** Place your `firebase-key.json` inside the `backend/` folder.
-- **Frontend:** Update `frontend/js/firebase-config.js` with your Web SDK config.
+### 2. Cấu hình Firebase
+- **Backend:** Đặt file `firebase-key.json` của bạn vào trong thư mục `backend/`.
+- **Frontend:** Cập nhật thông tin Web SDK của bạn trong file `frontend/js/firebase-config.js`.
 
-### 3. Run Backend
+### 3. Chạy Backend
 ```bash
 cd backend
 uvicorn app.main:app --reload --port 8000
 ```
 
-### 4. Run Frontend (New Terminal)
+### 4. Chạy Frontend (Mở Terminal mới)
 ```bash
 cd frontend
 python -m http.server 3000
 ```
-Visit: `http://localhost:3000`
+Truy cập: `http://localhost:3000`
 
-## 🌟 Key Features
-- **Auth:** Google Sign-In & Email/Password registration.
-- **Views:** Switch between List View and Monthly Calendar.
-- **Task Logic:** Auto-sort by deadline, overdue highlighting, and custom labels.
-- **Design:** Modern Glassmorphism with responsive modal forms.
+## IV. Các tính năng chính 🌟
+- **Xác thực (Auth):** Đăng nhập bằng Google và Đăng ký/Đăng nhập bằng Email/Mật khẩu.
+- **Chế độ xem:** Chuyển đổi linh hoạt giữa Danh sách (List View) Lịch tháng (Calendar View) và Lịch tuần (Weekly View).
+- **Logic quản lý Task:** Tự động sắp xếp theo hạn chót, làm nổi bật các task quá hạn và hỗ trợ gắn nhãn (label) tùy chỉnh.
+- **Thiết kế:** Giao diện Glassmorphism hiện đại, chuyên nghiệp và phản hồi tốt (responsive).
+- **Triển khai (Deployment):** Ứng dụng đã được deploy lên Firebase Hosting cho Frontend và các nền tảng đám mây cho Backend.
 
-## 🎨 Customization
-Edit `frontend/css/styles.css` to change theme colors:
+## V. Video Demo 🎥
+Bạn có thể xem video hướng dẫn sử dụng ứng dụng Tasker tại đây:
+[Link đến Video Demo](https://your-video-demo-link.com)
+
+## VI. Tùy chỉnh giao diện 🎨
+Chỉnh sửa file `frontend/css/styles.css` để thay đổi màu sắc chủ đạo:
 ```css
 :root {
-    --primary: #3b82f6;
-    --bg: #0f172a;
+    --primary: #3b82f6; /* Màu chính */
+    --bg: #0f172a;      /* Màu nền */
 }
 ```
+

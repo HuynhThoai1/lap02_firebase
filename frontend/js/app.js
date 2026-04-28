@@ -5,10 +5,15 @@ const addTaskBtn = document.getElementById('add-task-btn');
 const newTaskTitle = document.getElementById('new-task-title');
 
 // Dropdown/Option elements
-const dateOption = document.getElementById('date-option');
-const dateDropdown = document.getElementById('date-dropdown');
+const scheduleOption = document.getElementById('schedule-option');
+const scheduleDropdown = document.getElementById('schedule-dropdown');
+const scheduleLabel = document.getElementById('schedule-label');
 
-const dateLabel = document.getElementById('selected-date-label');
+const quickTaskHour = document.getElementById('quick-task-hour');
+const quickTaskMinute = document.getElementById('quick-task-minute');
+const quickTaskEndHour = document.getElementById('quick-task-end-hour');
+const quickTaskEndMinute = document.getElementById('quick-task-end-minute');
+const quickTimeClear = document.getElementById('quick-time-clear');
 
 const labelOption = document.getElementById('label-option');
 const labelDropdown = document.getElementById('label-dropdown');
@@ -20,6 +25,10 @@ const taskModal = document.getElementById('task-modal');
 const editTaskTitle = document.getElementById('edit-task-title');
 const editTaskDesc = document.getElementById('edit-task-desc');
 const editTaskDate = document.getElementById('edit-task-date');
+const editTaskStartHour = document.getElementById('edit-task-start-hour');
+const editTaskStartMinute = document.getElementById('edit-task-start-minute');
+const editTaskEndHour = document.getElementById('edit-task-end-hour');
+const editTaskEndMinute = document.getElementById('edit-task-end-minute');
 const editTaskLabelSelect = document.getElementById('edit-task-label-select');
 const saveTaskBtn = document.getElementById('save-task-btn');
 const deleteModalBtn = document.getElementById('delete-task-modal-btn');
@@ -27,6 +36,8 @@ const closeModalBtn = document.getElementById('close-modal-btn');
 
 let selectedDate = new Date();
 let selectedLabel = "Default";
+let selectedTime = null;
+let selectedEndTime = null;
 let currentEditingTaskId = null;
 let currentFilterDate = null;
 let customLabels = JSON.parse(localStorage.getItem('customLabels')) || [];
@@ -43,11 +54,12 @@ function init() {
     renderFullCalendar();
 }
 
-// --- View Switcher ---
 const tabList = document.getElementById('tab-list-view');
 const tabCalendar = document.getElementById('tab-calendar-view');
+const tabWeek = document.getElementById('tab-week-view');
 const listViewSection = document.getElementById('list-view-section');
 const calendarViewSection = document.getElementById('calendar-view-section');
+const weekViewSection = document.getElementById('week-view-section');
 
 function setupViewSwitcher() {
     tabList.onclick = () => {
@@ -55,10 +67,13 @@ function setupViewSwitcher() {
         tabList.style.borderColor = 'transparent';
         tabCalendar.style.background = 'transparent';
         tabCalendar.style.borderColor = 'var(--glass-border)';
+        tabWeek.style.background = 'transparent';
+        tabWeek.style.borderColor = 'var(--glass-border)';
         
-        listViewSection.style.display = 'grid'; // .app-grid uses grid
+        listViewSection.style.display = 'grid'; 
         calendarViewSection.style.display = 'none';
-        document.querySelector('aside').style.display = 'block'; // Ensure sidebar calendar is visible
+        weekViewSection.style.display = 'none';
+        document.querySelector('aside').style.display = 'block'; 
         loadTasks();
     };
 
@@ -67,11 +82,29 @@ function setupViewSwitcher() {
         tabCalendar.style.borderColor = 'transparent';
         tabList.style.background = 'transparent';
         tabList.style.borderColor = 'var(--glass-border)';
+        tabWeek.style.background = 'transparent';
+        tabWeek.style.borderColor = 'var(--glass-border)';
         
         listViewSection.style.display = 'none';
         calendarViewSection.style.display = 'block';
-        document.querySelector('aside').style.display = 'none'; // Hide sidebar calendar
+        weekViewSection.style.display = 'none';
+        document.querySelector('aside').style.display = 'none'; 
         renderFullCalendar();
+    };
+
+    tabWeek.onclick = () => {
+        tabWeek.style.background = 'var(--primary)';
+        tabWeek.style.borderColor = 'transparent';
+        tabList.style.background = 'transparent';
+        tabList.style.borderColor = 'var(--glass-border)';
+        tabCalendar.style.background = 'transparent';
+        tabCalendar.style.borderColor = 'var(--glass-border)';
+        
+        listViewSection.style.display = 'none';
+        calendarViewSection.style.display = 'none';
+        weekViewSection.style.display = 'block';
+        document.querySelector('aside').style.display = 'none'; 
+        renderWeeklyView();
     };
 }
 
@@ -85,6 +118,19 @@ function setupExpandTask() {
         editTaskTitle.value = newTaskTitle.value.trim();
         editTaskDesc.value = '';
         editTaskDate.value = selectedDate.toISOString().split('T')[0];
+        
+        // Default to current hour, end +1 hour
+        const now = new Date();
+        const startHour = now.getHours();
+        const endHour = (startHour + 1) % 24;
+        const minStr = now.getMinutes().toString().padStart(2, '0');
+        
+        editTaskStartHour.value = startHour.toString().padStart(2, '0');
+        editTaskStartMinute.value = minStr;
+        
+        editTaskEndHour.value = endHour.toString().padStart(2, '0');
+        editTaskEndMinute.value = minStr;
+
         editTaskLabelSelect.value = selectedLabel;
         
         deleteModalBtn.style.display = 'none'; // Hide delete button when creating
@@ -95,16 +141,25 @@ function setupExpandTask() {
 // --- UI Logic ---
 function setupDropdowns() {
     // Toggle dropdowns
-    dateOption.onclick = (e) => {
+    scheduleOption.onclick = (e) => {
         e.stopPropagation();
-        dateDropdown.style.display = dateDropdown.style.display === 'flex' ? 'none' : 'flex';
+        scheduleDropdown.style.display = scheduleDropdown.style.display === 'flex' ? 'none' : 'flex';
         labelDropdown.style.display = 'none';
+
+        // Initialize with current time if empty and dropdown is opening
+        if (scheduleDropdown.style.display === 'flex' && !quickTaskHour.value) {
+            const now = new Date();
+            quickTaskHour.value = now.getHours().toString().padStart(2, '0');
+            quickTaskMinute.value = now.getMinutes().toString().padStart(2, '0');
+            quickTaskEndHour.value = ((now.getHours() + 1) % 24).toString().padStart(2, '0');
+            quickTaskEndMinute.value = quickTaskMinute.value;
+        }
     };
 
     labelOption.onclick = (e) => {
         e.stopPropagation();
         labelDropdown.style.display = labelDropdown.style.display === 'flex' ? 'none' : 'flex';
-        dateDropdown.style.display = 'none';
+        scheduleDropdown.style.display = 'none';
     };
 
     labelDropdown.addEventListener('click', (e) => {
@@ -112,35 +167,34 @@ function setupDropdowns() {
     });
 
     document.addEventListener('click', () => {
-        dateDropdown.style.display = 'none';
+        scheduleDropdown.style.display = 'none';
         labelDropdown.style.display = 'none';
         document.getElementById('mini-calendar-container').style.display = 'none'; // reset
     });
 
-    dateDropdown.addEventListener('click', (e) => {
+    scheduleDropdown.addEventListener('click', (e) => {
         e.stopPropagation();
     });
 
     // Date selection
-    const dateOptions = dateDropdown.querySelectorAll('div[data-value]');
+    const dateOptions = scheduleDropdown.querySelectorAll('.dropdown-item[data-value]');
     dateOptions.forEach(opt => {
         opt.addEventListener('click', (e) => {
-            const val = e.target.dataset.value;
+            const val = e.currentTarget.dataset.value;
             if (!val) return;
             
             if (val === 'today') {
                 selectedDate = new Date();
-                dateLabel.textContent = "Today";
-                dateDropdown.style.display = 'none';
+                updateScheduleLabel();
+                // scheduleDropdown.style.display = 'none'; // Keep open to allow time adjustment
                 document.getElementById('mini-calendar-container').style.display = 'none';
             } else if (val === 'tomorrow') {
                 selectedDate = new Date();
                 selectedDate.setDate(selectedDate.getDate() + 1);
-                dateLabel.textContent = "Tomorrow";
-                dateDropdown.style.display = 'none';
+                updateScheduleLabel();
+                // scheduleDropdown.style.display = 'none';
                 document.getElementById('mini-calendar-container').style.display = 'none';
             }
-            // 'custom' is handled by hover now, but if clicked, do nothing
         });
     });
 
@@ -251,8 +305,9 @@ function renderMiniCalendar() {
         dayEl.onclick = (e) => {
             e.stopPropagation();
             selectedDate = new Date(year, month, day);
-            dateLabel.textContent = selectedDate.toLocaleDateString();
-            dateDropdown.style.display = 'none';
+            updateScheduleLabel();
+            // Optional: hide mini calendar but keep schedule dropdown open
+            document.getElementById('mini-calendar-container').style.display = 'none';
         };
         
         container.appendChild(dayEl);
@@ -313,10 +368,12 @@ function renderTasks(tasks) {
         const labelStyle = labelObj ? `style="background: ${labelObj.color}22; color: ${labelObj.color}; border-color: ${labelObj.color}"` : '';
 
         let titleStyle = '';
+        let dateStyle = 'font-size: 11px; color: var(--text-muted)';
+
         if (task.status === 'completed') {
             titleStyle = 'text-decoration: line-through; color: white; opacity: 0.9;';
         } else if (isOverdue) {
-            titleStyle = 'color: #ef4444;'; // Overdue red
+            dateStyle = 'font-size: 11px; color: #ef4444; font-weight: bold;'; // Overdue red on date
         }
 
         taskEl.innerHTML = `
@@ -324,10 +381,10 @@ function renderTasks(tasks) {
                 <svg width="14" height="14" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             </div>
             <div class="task-info" onclick="openTaskModal('${task.id}')" style="cursor: pointer; flex-grow: 1; margin-left: 1rem;">
-                <h3 style="${titleStyle}">${task.title}</h3>
+                <h3 class="task-item-title" style="${titleStyle}">${task.title}</h3>
                 <div class="task-meta" style="display: flex; gap: 0.5rem; align-items: center; margin-top: 4px;">
                     <span class="label" ${labelStyle}>${task.label || 'Default'}</span>
-                    <span style="font-size: 11px; color: var(--text-muted)">${new Date(task.due_date || task.created_at).toLocaleDateString()}</span>
+                    <span style="${dateStyle}">${new Date(task.due_date || task.created_at).toLocaleDateString()}</span>
                 </div>
             </div>
         `;
@@ -335,15 +392,123 @@ function renderTasks(tasks) {
     });
 }
 
+// Format number inputs to be 2-digit zero-padded
+const timeInputs = [
+    editTaskStartHour, editTaskEndHour, quickTaskHour, quickTaskEndHour,
+    editTaskStartMinute, editTaskEndMinute, quickTaskMinute, quickTaskEndMinute
+];
+
+timeInputs.forEach(input => {
+    if (!input) return;
+    input.addEventListener('change', (e) => {
+        let val = parseInt(e.target.value, 10);
+        if (isNaN(val)) val = 0;
+        const max = parseInt(e.target.max, 10);
+        const min = parseInt(e.target.min, 10);
+        if (val < min) val = max;
+        if (val > max) val = min;
+        e.target.value = val.toString().padStart(2, '0');
+    });
+});
+
+// Schedule updates logic follows below
+
+function updateScheduleLabel() {
+    let dateStr = "Today";
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const targetDate = new Date(selectedDate);
+    targetDate.setHours(0,0,0,0);
+
+    if (targetDate.getTime() === today.getTime()) {
+        dateStr = "Today";
+    } else {
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        if (targetDate.getTime() === tomorrow.getTime()) {
+            dateStr = "Tomorrow";
+        } else {
+            dateStr = targetDate.toLocaleDateString();
+        }
+    }
+
+    let timeStr = "Now";
+    if (selectedTime) {
+        timeStr = selectedTime;
+        if (selectedEndTime) {
+            timeStr += ` - ${selectedEndTime}`;
+        }
+    }
+
+    scheduleLabel.textContent = `${dateStr}, ${timeStr}`;
+}
+
+const updateQuickTime = () => {
+    const h = quickTaskHour.value;
+    const m = quickTaskMinute.value;
+    const eh = quickTaskEndHour.value;
+    const em = quickTaskEndMinute.value;
+    
+    if (h && m) {
+        selectedTime = `${h}:${m}`;
+        if (eh && em) {
+            selectedEndTime = `${eh}:${em}`;
+        } else {
+            selectedEndTime = null;
+        }
+        updateScheduleLabel();
+    }
+};
+
+quickTaskHour.onchange = updateQuickTime;
+quickTaskMinute.onchange = updateQuickTime;
+quickTaskEndHour.onchange = updateQuickTime;
+quickTaskEndMinute.onchange = updateQuickTime;
+
+quickTimeClear.onclick = (e) => {
+    e.stopPropagation();
+    selectedTime = null;
+    selectedEndTime = null;
+    selectedDate = new Date();
+    quickTaskHour.value = '';
+    quickTaskMinute.value = '';
+    quickTaskEndHour.value = '';
+    quickTaskEndMinute.value = '';
+    updateScheduleLabel();
+    scheduleDropdown.style.display = 'none';
+};
+
 async function handleAddTask() {
     const title = newTaskTitle.value.trim();
     if (!title) return;
 
     try {
+        const startDate = new Date(selectedDate);
+        let endDate = new Date(selectedDate);
+        
+        if (selectedTime) {
+            const [h, m] = selectedTime.split(':');
+            startDate.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
+            
+            if (selectedEndTime) {
+                const [eh, em] = selectedEndTime.split(':');
+                endDate.setHours(parseInt(eh, 10), parseInt(em, 10), 0, 0);
+                if (endDate < startDate) endDate.setDate(endDate.getDate() + 1);
+            } else {
+                endDate.setHours(startDate.getHours() + 1);
+            }
+        } else {
+            const now = new Date();
+            startDate.setHours(now.getHours(), now.getMinutes(), 0, 0);
+            endDate = new Date(startDate);
+            endDate.setHours(startDate.getHours() + 1);
+        }
+
         await api.createTask({ 
             title, 
             label: selectedLabel,
-            due_date: selectedDate.toISOString()
+            due_date: startDate.toISOString(),
+            end_time: endDate.toISOString()
         });
         newTaskTitle.value = '';
         loadTasks();
@@ -365,16 +530,7 @@ function setupModal() {
     saveTaskBtn.onclick = handleSaveEdit;
     deleteModalBtn.onclick = handleDeleteFromModal;
 
-    // Modal Date Pickers
-    const today = new Date();
-    document.getElementById('modal-date-today').onclick = () => {
-        editTaskDate.value = today.toISOString().split('T')[0];
-    };
-    document.getElementById('modal-date-tomorrow').onclick = () => {
-        const tmr = new Date();
-        tmr.setDate(tmr.getDate() + 1);
-        editTaskDate.value = tmr.toISOString().split('T')[0];
-    };
+    // Modal Date Pickers (Cleaned up buttons)
 
     // Modal Label Creator
     document.getElementById('modal-create-label-btn').onclick = () => {
@@ -404,6 +560,28 @@ window.openTaskModal = async (id) => {
     editTaskTitle.value = task.title;
     editTaskDesc.value = task.description || '';
     editTaskDate.value = task.due_date ? task.due_date.split('T')[0] : '';
+    
+    if (task.due_date) {
+        const d = new Date(task.due_date);
+        editTaskStartHour.value = d.getHours().toString().padStart(2, '0');
+        editTaskStartMinute.value = d.getMinutes().toString().padStart(2, '0');
+    } else {
+        editTaskStartHour.value = '00';
+        editTaskStartMinute.value = '00';
+    }
+
+    if (task.end_time) {
+        const e = new Date(task.end_time);
+        editTaskEndHour.value = e.getHours().toString().padStart(2, '0');
+        editTaskEndMinute.value = e.getMinutes().toString().padStart(2, '0');
+    } else {
+        // default 1 hr later
+        const startH = task.due_date ? new Date(task.due_date).getHours() : 0;
+        const endH = (startH + 1) % 24;
+        editTaskEndHour.value = endH.toString().padStart(2, '0');
+        editTaskEndMinute.value = '00';
+    }
+
     editTaskLabelSelect.value = task.label || 'Default';
     
     taskModal.style.display = 'flex';
@@ -411,10 +589,31 @@ window.openTaskModal = async (id) => {
 
 async function handleSaveEdit() {
     try {
+        // Combine date and time (Fix local timezone parsing)
+        const [y, m, d] = editTaskDate.value.split('-');
+        const baseDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+        
+        const startH = editTaskStartHour.value;
+        const startM = editTaskStartMinute.value;
+        const endH = editTaskEndHour.value;
+        const endM = editTaskEndMinute.value;
+        
+        const startDate = new Date(baseDate);
+        if (startH) { startDate.setHours(parseInt(startH, 10), parseInt(startM, 10), 0, 0); }
+        
+        const endDate = new Date(baseDate);
+        if (endH) { endDate.setHours(parseInt(endH, 10), parseInt(endM, 10), 0, 0); }
+
+        // Handle overnight tasks (end time is smaller than start time)
+        if (endDate < startDate) {
+            endDate.setDate(endDate.getDate() + 1);
+        }
+
         const payload = {
             title: editTaskTitle.value,
             description: editTaskDesc.value,
-            due_date: new Date(editTaskDate.value).toISOString(),
+            due_date: startDate.toISOString(),
+            end_time: endDate.toISOString(),
             label: editTaskLabelSelect.value
         };
 
@@ -565,3 +764,305 @@ document.getElementById('full-next-month').onclick = () => {
     fullCalDate.setMonth(fullCalDate.getMonth() + 1);
     renderFullCalendar();
 };
+
+// ==========================================
+// WEEKLY VIEW LOGIC (DRAG & DROP)
+// ==========================================
+let currentWeekStart = getStartOfWeek(new Date());
+
+function getStartOfWeek(date) {
+    const d = new Date(date);
+    const day = d.getDay() || 7; // Sunday is 0, make it 7
+    d.setDate(d.getDate() - day + 1); // Monday
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+document.getElementById('week-prev-btn').onclick = () => {
+    currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+    renderWeeklyView();
+};
+
+document.getElementById('week-next-btn').onclick = () => {
+    currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    renderWeeklyView();
+};
+
+async function renderWeeklyView() {
+    const headersGrid = document.getElementById('week-headers');
+    const alldayGrid = document.getElementById('week-allday-grid');
+    const bodyGrid = document.getElementById('week-body-grid');
+    
+    // Set Header Label
+    const endOfWeek = new Date(currentWeekStart);
+    endOfWeek.setDate(endOfWeek.getDate() + 6);
+    document.getElementById('week-view-label').textContent = 
+        `Week of ${currentWeekStart.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`;
+
+    // Clear Grids
+    headersGrid.innerHTML = '<div class="week-header-cell">GMT</div>';
+    alldayGrid.innerHTML = '<div class="week-allday-label">All Day</div>';
+    bodyGrid.innerHTML = '<div class="week-time-labels" id="week-time-labels"></div>';
+
+    // Time Labels Column
+    const timeLabelsCol = bodyGrid.querySelector('#week-time-labels');
+    for (let i = 0; i < 24; i++) {
+        const label = document.createElement('div');
+        label.className = 'time-label';
+        label.textContent = `${i.toString().padStart(2, '0')}:00`;
+        timeLabelsCol.appendChild(label);
+    }
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    // Render 7 Days columns
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(currentWeekStart);
+        date.setDate(date.getDate() + i);
+
+        const isToday = date.getTime() === today.getTime();
+
+        // 1. Header
+        const headerCell = document.createElement('div');
+        headerCell.className = `week-header-cell ${isToday ? 'today' : ''}`;
+        headerCell.innerHTML = `<div>${date.toLocaleDateString('en-US', { weekday: 'short' })}</div><div style="font-size: 1.2rem">${date.getDate()}</div>`;
+        headersGrid.appendChild(headerCell);
+
+        // 2. All Day Cell (Dropzone)
+        const alldayCell = document.createElement('div');
+        alldayCell.className = 'week-allday-cell';
+        alldayCell.dataset.date = date.toISOString();
+        alldayCell.ondragover = handleDragOver;
+        alldayCell.ondrop = handleDropAllDay;
+        alldayCell.ondragenter = (e) => e.target.classList.add('drag-over');
+        alldayCell.ondragleave = (e) => e.target.classList.remove('drag-over');
+        alldayGrid.appendChild(alldayCell);
+
+        // 3. Body Column (24 slots)
+        const dayCol = document.createElement('div');
+        dayCol.className = 'week-day-col';
+        dayCol.dataset.date = date.toISOString();
+        
+        for (let h = 0; h < 24; h++) {
+            const slot = document.createElement('div');
+            slot.className = 'time-slot';
+            slot.dataset.hour = h;
+            slot.dataset.date = date.toISOString();
+            slot.ondragover = handleDragOver;
+            slot.ondrop = handleDropTimed;
+            slot.ondragenter = (e) => e.target.classList.add('drag-over');
+            slot.ondragleave = (e) => e.target.classList.remove('drag-over');
+            dayCol.appendChild(slot);
+        }
+        bodyGrid.appendChild(dayCol);
+    }
+
+    // Fetch and populate tasks
+    try {
+        const tasks = await api.getTasks();
+        const pendingTasks = tasks.filter(t => t.status !== 'completed');
+        
+        const tasksByDay = {};
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(currentWeekStart);
+            d.setDate(d.getDate() + i);
+            const localDateStr = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+            tasksByDay[localDateStr] = [];
+        }
+
+        pendingTasks.forEach(task => {
+            const taskDate = new Date(task.due_date || task.created_at);
+            const taskTime = taskDate.getTime();
+            
+            // Check if task falls within this week
+            const startOfWkTime = currentWeekStart.getTime();
+            const endOfWkTime = endOfWeek.getTime() + 86400000;
+
+            if (taskTime >= startOfWkTime && taskTime < endOfWkTime) {
+                const isAllDay = taskDate.getHours() === 0 && taskDate.getMinutes() === 0;
+                if (isAllDay) {
+                    renderTaskOnGrid(task, taskDate, true, null);
+                } else {
+                    const localDateStr = new Date(taskDate.getTime() - taskDate.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+                    if (tasksByDay[localDateStr]) {
+                        tasksByDay[localDateStr].push(task);
+                    }
+                }
+            }
+        });
+
+        // Process overlaps for each day
+        Object.keys(tasksByDay).forEach(dateStr => {
+            const dayTasks = tasksByDay[dateStr];
+            if (dayTasks.length === 0) return;
+
+            // Sort by start time
+            dayTasks.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+
+            // Simple overlap logic: cluster overlapping tasks
+            const clusters = [];
+            let currentCluster = [];
+            let maxEndInCluster = 0;
+
+            dayTasks.forEach(task => {
+                const start = new Date(task.due_date).getTime();
+                const end = task.end_time ? new Date(task.end_time).getTime() : start + 3600000; // default 1 hour
+                
+                if (currentCluster.length === 0 || start < maxEndInCluster) {
+                    currentCluster.push(task);
+                    maxEndInCluster = Math.max(maxEndInCluster, end);
+                } else {
+                    clusters.push(currentCluster);
+                    currentCluster = [task];
+                    maxEndInCluster = end;
+                }
+            });
+            if (currentCluster.length > 0) clusters.push(currentCluster);
+
+            // Render clusters
+            clusters.forEach(cluster => {
+                const numInCluster = cluster.length;
+                const widthPct = 96 / numInCluster;
+                cluster.forEach((task, index) => {
+                    const leftPct = 2 + (index * widthPct);
+                    renderTaskOnGrid(task, new Date(task.due_date), false, { width: `${widthPct}%`, left: `${leftPct}%` });
+                });
+            });
+        });
+
+    } catch (e) { console.error(e); }
+}
+
+window.renderWeeklyView = renderWeeklyView;
+
+function renderTaskOnGrid(task, dateObj, isAllDay, overlapStyles) {
+    const colDateStr = new Date(dateObj);
+    colDateStr.setHours(0,0,0,0);
+
+    const taskEl = document.createElement('div');
+    taskEl.className = 'week-task-block';
+    taskEl.draggable = true;
+    
+    const timeText = isAllDay ? "" : `<div><b>${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}</b></div>`;
+    taskEl.innerHTML = `${timeText}<div>${task.title}</div>`;
+    taskEl.dataset.id = task.id;
+    
+    taskEl.ondragstart = (e) => {
+        e.dataTransfer.setData('text/plain', task.id);
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => taskEl.style.opacity = '0.5', 0);
+    };
+    taskEl.ondragend = (e) => {
+        taskEl.style.opacity = '1';
+    };
+    taskEl.onclick = (e) => {
+        e.stopPropagation();
+        openTaskModal(task.id);
+    };
+
+    const labelObj = customLabels.find(l => l.name === task.label);
+    if (labelObj) {
+        taskEl.style.backgroundColor = labelObj.color;
+        taskEl.style.borderLeftColor = "white";
+    }
+
+    if (isAllDay) {
+        // Find Allday cell
+        const cells = document.querySelectorAll('.week-allday-cell');
+        cells.forEach(cell => {
+            const cellDate = new Date(cell.dataset.date);
+            if (cellDate.getTime() === colDateStr.getTime()) {
+                cell.appendChild(taskEl);
+            }
+        });
+    } else {
+        // Calculate duration and height
+        const startMs = dateObj.getTime();
+        const endMs = task.end_time ? new Date(task.end_time).getTime() : startMs + 3600000;
+        const durationHours = (endMs - startMs) / 3600000;
+        const heightPx = Math.max(20, durationHours * 60);
+
+        // Find Body col
+        const cols = document.querySelectorAll('.week-day-col');
+        cols.forEach(col => {
+            const cellDate = new Date(col.dataset.date);
+            if (cellDate.getTime() === colDateStr.getTime()) {
+                const hour = dateObj.getHours();
+                const min = dateObj.getMinutes();
+                const topPos = (hour * 60) + (min); 
+                taskEl.style.top = `${topPos}px`;
+                taskEl.style.height = `${heightPx}px`; 
+                
+                if (overlapStyles) {
+                    taskEl.style.width = overlapStyles.width;
+                    taskEl.style.left = overlapStyles.left;
+                }
+                
+                col.appendChild(taskEl);
+            }
+        });
+    }
+}
+
+// Drag & Drop Handlers
+function handleDragOver(e) {
+    e.preventDefault(); 
+    e.dataTransfer.dropEffect = 'move';
+}
+
+async function handleDropAllDay(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const taskId = e.dataTransfer.getData('text/plain');
+    if (!taskId) return;
+
+    const newDateStr = e.currentTarget.dataset.date;
+    const newDate = new Date(newDateStr);
+    newDate.setHours(0,0,0,0); // All day
+
+    await updateTaskTimes(taskId, newDate, null);
+}
+
+async function handleDropTimed(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    const taskId = e.dataTransfer.getData('text/plain');
+    if (!taskId) return;
+
+    const newDateStr = e.currentTarget.dataset.date;
+    const hour = parseInt(e.currentTarget.dataset.hour, 10);
+    
+    const newDate = new Date(newDateStr);
+    newDate.setHours(hour, 0, 0, 0);
+
+    // Fetch the task to preserve its duration
+    const tasks = await api.getTasks();
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const startMs = new Date(task.due_date || task.created_at).getTime();
+    const endMs = task.end_time ? new Date(task.end_time).getTime() : startMs + 3600000;
+    const durationMs = endMs - startMs;
+
+    const newEndDate = new Date(newDate.getTime() + durationMs);
+
+    await updateTaskTimes(taskId, newDate, newEndDate);
+}
+
+async function updateTaskTimes(taskId, newStartDate, newEndDate) {
+    try {
+        const payload = { due_date: newStartDate.toISOString() };
+        if (newEndDate) {
+            payload.end_time = newEndDate.toISOString();
+        }
+        await api.updateTask(taskId, payload);
+        // Refresh views
+        loadTasks();
+        renderFullCalendar();
+        renderWeeklyView();
+        window.dispatchEvent(new CustomEvent('tasks-updated'));
+    } catch (e) {
+        console.error("Failed to update task date", e);
+    }
+}
