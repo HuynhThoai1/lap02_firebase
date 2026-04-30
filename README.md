@@ -3,9 +3,9 @@
 **Môn học:** Tư duy tính toán  
 **Giảng viên hướng dẫn:** Lê Đức Khoan
 
-## I. Thông tin thực hiện
-* **Họ và tên:** Huỳnh Chí Thoại
-* **MSSV:** 24120457
+## I. Thông tin người thực hiện
+**Họ và tên:** Huỳnh Chí Thoại  
+**MSSV:** 24120457
 
 ## II. Truy cập trực tuyến 🌐
 Ứng dụng đã được triển khai tại:
@@ -51,8 +51,8 @@ Truy cập: `http://localhost:3000`
 - **Triển khai (Deployment):** Ứng dụng đã được deploy lên Firebase Hosting cho Frontend và các nền tảng đám mây cho Backend.
 
 ## V. Video Demo 🎥
-Bạn có thể xem video hướng dẫn sử dụng ứng dụng Tasker tại đây:
-[Link đến Video Demo](https://your-video-demo-link.com)
+
+
 
 ## VI. Tùy chỉnh giao diện 🎨
 Chỉnh sửa file `frontend/css/styles.css` để thay đổi màu sắc chủ đạo:
