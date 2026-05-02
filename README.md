@@ -51,7 +51,8 @@ Truy cập: `http://localhost:3000`
 - **Triển khai (Deployment):** Ứng dụng đã được deploy lên Firebase Hosting cho Frontend và các nền tảng đám mây cho Backend.
 
 ## V. Video Demo 🎥
-
+[![Watch the video](https://img.youtube.com/vi/29txzZHBrME/0.jpg)]
+(https://youtu.be/29txzZHBrME)
 
 
 ## VI. Tùy chỉnh giao diện 🎨
